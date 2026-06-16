@@ -15,3 +15,8 @@ class SubmitNostrAuthChallengeBody(BaseModel):
 
 class SetGrapeRankPresetBody(BaseModel):
     preset: GrapeRankPresetTemplate
+
+
+class CreateShortUrlBody(BaseModel):
+    pubkey: str
+    relays: list[str]

@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     block_frequent_graperank_requests_minutes: int = Field(default=30)
     periodic_graperank_pubkey: str = Field(default="")
     vespa_url: str = Field(...)
+    # Expiry (seconds) for shortened URLs. None = never expire (current default).
+    shorturl_ttl_seconds: int | None = Field(default=None)
 
     class Config:
         env_file = ".env"

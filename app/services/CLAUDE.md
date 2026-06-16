@@ -17,6 +17,7 @@ publishing — and routers just thin-wrap them.
 | `graperank_preset_service.py` | 109 | Builtin presets (DEFAULT/PERMISSIVE/RESTRICTIVE) get/set + history; bridges camelCase API ↔ snake_case columns. |
 | `assistant_profile_service.py` | 107 | Publish a kind-0 profile event for the assistant pubkey. Pure Nostr-side; no DB. |
 | `nsec_encryption_service.py` | 210 | Background rotation of `BrainstormNsec.encrypted_nsec`: scan rows, decrypt-old/encrypt-new, write back. Idempotent and resumable. |
+| `shorturl_service.py` | 150 | URL shortener: validate relays, generate/dedupe short codes, Redis storage. Repo-less — Redis only. Powers [`/shorturl`](../routers/shorturl/CLAUDE.md). |
 
 ## Conventions
 
@@ -86,6 +87,12 @@ process; if/when you horizontally scale the server, push this flag into Redis.
 - `verify_encrypted_nsec(...)` walks all rows, tries to decrypt each, returns `{ok, fail}`. Used by `/admin/nsec-encryption/verify`.
 - `rotate_encryption(...)` (background task) does decrypt-with-old → re-encrypt-with-new for every row that's still on the old key. Idempotent: rows already on the new key are skipped.
 - Both functions read keys from `settings.nsec_encryption_key` / `settings.nsec_encryption_key_previous`.
+
+### `shorturl_service.py`
+
+- `create_short_url(pubkey, relays)` → `(short_code, content)`. Validates relays (each a well-formed `ws://`/`wss://` URL; max `MAX_RELAYS = 7`; `[]` is valid), then returns the existing code for that `(pubkey, relay-set)` or mints a new one. Idempotent via a fingerprint reverse index.
+- `get_short_url_content(short_code)` → `ShortUrlContent`, 404 if absent.
+- Repo-less: talks only to the shared `redis_client`. TTL via `settings.shorturl_ttl_seconds` (None = no expiry). Redis key layout is documented in [`../routers/shorturl/CLAUDE.md`](../routers/shorturl/CLAUDE.md).
 
 ## Adding a new service
 
